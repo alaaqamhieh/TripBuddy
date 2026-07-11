@@ -339,8 +339,9 @@
   document.getElementById("sources").innerHTML = TRIP.sources
     .map(s => `<a href="${s.url}" target="_blank" rel="noopener">${s.label}</a>`).join("");
   document.getElementById("friends-note").innerHTML =
-    `<li>Chester → Short Pump: ≈30 min via VA-288 N</li>` +
+    `<li>Chester → Charlottesville: ≈1h 10m via I-64 W</li>` +
     TRIP.friends.map(f => `<li>${f.name}: ${f.toMeetup}</li>`).join("") +
+    `<li>Capron meets the group at the Downtown Mall.</li>` +
     `<li>Tap the grey ➤ pins on the map for each crew's route to the meetup.</li>`;
 
   function focusStop(p) {
@@ -488,8 +489,8 @@
       });
     } catch (e) {
       drawRoute(itin.map(id => pool[id].coords), true);
-      document.getElementById("stat-dist").textContent = "≈310 mi";
-      document.getElementById("stat-drive").textContent = "≈7 h driving";
+      document.getElementById("stat-dist").textContent = "≈300 mi";
+      document.getElementById("stat-drive").textContent = "≈6½ h driving";
     }
   }
 
