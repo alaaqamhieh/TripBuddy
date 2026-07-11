@@ -48,24 +48,24 @@
       }
     },
     layers: [
-      { id: "streets", type: "raster", source: "streets", layout: { visibility: "none" } },
-      { id: "sat", type: "raster", source: "satellite" },
-      { id: "satlbl", type: "raster", source: "satlabels", paint: { "raster-opacity": 0.85 } }
+      { id: "streets", type: "raster", source: "streets" },
+      { id: "sat", type: "raster", source: "satellite", layout: { visibility: "none" } },
+      { id: "satlbl", type: "raster", source: "satlabels", layout: { visibility: "none" }, paint: { "raster-opacity": 0.85 } }
     ],
-    terrain: { source: "dem", exaggeration: 1.5 },
     sky: {
       "sky-color": "#8fb8de", "horizon-color": "#e8d8c3", "fog-color": "#dfe8f0",
       "sky-horizon-blend": 0.6, "horizon-fog-blend": 0.7
     }
   };
 
+  // Google-Maps-style default: flat, north-up, whole loop in view, street map
   const map = new maplibregl.Map({
     container: "map",
     style,
-    center: TRIP.center,
-    zoom: 9.6,
-    pitch: 55,
-    bearing: 0,           // north-up by default
+    bounds: TRIP.overviewBounds,
+    fitBoundsOptions: { padding: 48 },
+    pitch: 0,
+    bearing: 0,
     maxPitch: 75,
     attributionControl: { compact: true }
   });
@@ -83,13 +83,24 @@
   document.getElementById("base-sat").addEventListener("click", () => setBase("sat"));
   document.getElementById("base-map").addEventListener("click", () => setBase("map"));
   document.getElementById("north-btn").addEventListener("click", () => {
-    map.easeTo({ bearing: 0, pitch: 55, duration: 800 });
+    map.easeTo({ bearing: 0, duration: 800 });
   });
-  document.getElementById("flat-btn").addEventListener("click", () => {
-    const flat = map.getPitch() > 10;
-    map.easeTo({ pitch: flat ? 0 : 60, duration: 800 });
-    document.getElementById("flat-btn").textContent = flat ? "3D" : "2D";
-  });
+
+  // 2D (default, Google-Maps-flat) <-> 3D terrain mode
+  let is3D = false;
+  const TERRAIN = { source: "dem", exaggeration: 1.5 };
+  function set3D(on) {
+    is3D = on;
+    if (on) {
+      map.setTerrain(TERRAIN);
+      map.easeTo({ pitch: 60, duration: 900 });
+    } else {
+      map.easeTo({ pitch: 0, duration: 900 });
+      map.once("moveend", () => { if (!is3D) map.setTerrain(null); });
+    }
+    document.getElementById("flat-btn").textContent = on ? "🗺 2D" : "⛰ 3D";
+  }
+  document.getElementById("flat-btn").addEventListener("click", () => set3D(!is3D));
 
   // ------------------------------------------------------------------- pins
   const KIND = {
@@ -346,18 +357,18 @@
 
   function focusStop(p) {
     const inPark = p.mp !== undefined;
-    map.flyTo({ center: p.coords, zoom: inPark ? 13.6 : 12.2, pitch: 62, duration: 2200, essential: true });
+    map.flyTo({ center: p.coords, zoom: inPark ? 13.6 : 12.2, duration: 2200, essential: true });
     const m = markers[p.id];
     if (m && !m.getPopup().isOpen()) m.togglePopup();
   }
 
   document.getElementById("overview-btn").addEventListener("click", () => {
     stopTour();
-    map.fitBounds(TRIP.overviewBounds, { pitch: 50, bearing: 0, duration: 2200 });
+    map.fitBounds(TRIP.overviewBounds, { padding: 48, bearing: 0, duration: 2200 });
   });
   document.getElementById("park-btn").addEventListener("click", () => {
     stopTour();
-    map.fitBounds(TRIP.parkBounds, { pitch: 60, bearing: 0, duration: 2200 });
+    map.fitBounds(TRIP.parkBounds, { padding: 32, bearing: 0, duration: 2200 });
   });
   document.getElementById("panel-toggle").addEventListener("click", () => {
     document.body.classList.toggle("panel-closed");
@@ -504,7 +515,7 @@
     if (inited) return;
     inited = true;
     await refreshRoute();
-    map.fitBounds(TRIP.overviewBounds, { pitch: 50, bearing: 0, duration: 3000 });
+    map.fitBounds(TRIP.overviewBounds, { padding: 48, bearing: 0, duration: 2000 });
   }
   map.once("load", init);
   setTimeout(() => { if (map.getStyle()) init(); }, 6000);
@@ -515,14 +526,20 @@
   // ---------------------------------------------------------------- fly tour
   let tourRAF = null;
   function stopTour() {
-    if (tourRAF) { cancelAnimationFrame(tourRAF); tourRAF = null; }
+    if (!tourRAF) return;
+    cancelAnimationFrame(tourRAF); tourRAF = null;
     document.getElementById("tour-btn").textContent = "▶ Fly the route";
+    if (!is3D) {                      // return to flat Google-Maps view
+      map.easeTo({ pitch: 0, duration: 800 });
+      map.once("moveend", () => { if (!is3D && !tourRAF) map.setTerrain(null); });
+    }
   }
 
   document.getElementById("tour-btn").addEventListener("click", () => {
     if (tourRAF) { stopTour(); return; }
     if (!routeLine) return;
     document.getElementById("tour-btn").textContent = "■ Stop tour";
+    map.setTerrain(TERRAIN);          // the flyover is always in 3D
 
     const line = routeLine;
     const cum = [0];
