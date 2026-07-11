@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>TripBuddy · Shenandoah Scenic Loop</title>
-  <meta name="description" content="TripBuddy — your day trip, mapped in 3D with a timed itinerary." />
+  <meta name="description" content="TripBuddy — your day trip, mapped in 3D with a customizable timed itinerary." />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⛰️</text></svg>" />
   <link rel="stylesheet" href="vendor/maplibre-gl.css" />
   <link rel="stylesheet" href="css/style.css" />
@@ -13,6 +13,13 @@
   <div id="map"></div>
 
   <button id="panel-toggle" title="Show / hide itinerary">☰</button>
+
+  <div id="map-ctrl">
+    <button id="base-sat" class="mc on" title="Satellite view">🛰 Satellite</button>
+    <button id="base-map" class="mc" title="Street map view">🗺 Map</button>
+    <button id="north-btn" class="mc" title="Face north">⇧ N</button>
+    <button id="flat-btn" class="mc" title="Toggle 2D / 3D">2D</button>
+  </div>
 
   <aside id="panel">
     <div class="panel-head">
@@ -29,12 +36,20 @@
         <button class="btn" id="park-btn">Park close-up</button>
         <button class="btn" id="overview-btn">Full loop</button>
         <a class="btn" id="gmaps-btn" href="#" target="_blank" rel="noopener">Google Maps ↗</a>
+        <button class="btn" id="reset-btn" title="Restore the recommended plan">↺ Reset plan</button>
       </div>
+      <div class="gmaps-note" id="gmaps-note"></div>
     </div>
 
     <div class="panel-scroll">
-      <div class="section-label">Day plan — tap a stop to fly there</div>
+      <div class="section-label">Meeting up</div>
+      <ul id="friends-note" class="notes-list"></ul>
+
+      <div class="section-label">Day plan — in driving order · ▲▼ to reorder, ✕ to drop</div>
       <ul id="itinerary"></ul>
+
+      <div class="section-label">Recommendations — tap ＋ to add to your day</div>
+      <div id="recs"></div>
 
       <div class="section-label">Pin legend</div>
       <div class="legend">
@@ -42,11 +57,13 @@
         <span><i style="background:#6da8e8"></i> Overlook</span>
         <span><i style="background:#79c2a7"></i> Gate / visitor center</span>
         <span><i style="background:#d99ad4"></i> Food &amp; towns</span>
-        <span><i style="background:#9aa5b1"></i> Alternate option</span>
+        <span><i style="background:#b8a4e3"></i> Attraction</span>
+        <span><i class="i-dash"></i> Suggestion (not in plan)</span>
+        <span><i style="background:#9aa5b1"></i> Friend start</span>
       </div>
 
       <div class="section-label">Good to know</div>
-      <ul id="notes"></ul>
+      <ul id="notes" class="notes-list"></ul>
 
       <div class="section-label">Researched from</div>
       <div id="sources"></div>
