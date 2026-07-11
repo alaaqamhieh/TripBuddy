@@ -119,6 +119,22 @@
 
   const markers = {};
 
+  // mobile: pin details open as a bottom card instead of a map popup
+  const isMobile = () => window.matchMedia("(max-width: 720px)").matches;
+  const cardEl = document.createElement("div");
+  cardEl.id = "poi-card";
+  document.body.appendChild(cardEl);
+  function closeCard() { cardEl.classList.remove("open"); }
+  function showCardHTML(html) {
+    document.body.classList.remove("panel-full");
+    cardEl.innerHTML = `<button id="poi-card-close" title="Close">✕</button><div class="card-scroll">${html}</div>`;
+    cardEl.classList.add("open");
+  }
+  cardEl.addEventListener("click", (e) => {
+    if (e.target.id === "poi-card-close") closeCard();
+  });
+  map.on("click", closeCard);
+
   function gmapsNav(p) {
     const dest = p.gplace ? encodeURIComponent(p.gplace) : `${p.coords[1].toFixed(5)},${p.coords[0].toFixed(5)}`;
     return `https://www.google.com/maps/dir/?api=1&destination=${dest}`;
@@ -165,6 +181,11 @@
     el.querySelector(".pin-dot").textContent = pinLabel(p);
   }
 
+  function showCard(p) {
+    showCardHTML(popupHTML(p));
+    loadPhotos(p);
+  }
+
   function addPoiMarker(p) {
     const k = KIND[p.kind];
     const el = document.createElement("div");
@@ -172,13 +193,18 @@
     el.style.setProperty("--pin", k.color);
     el.innerHTML = `<span class="pin-dot"></span>`;
     el.title = p.name;
-    const popup = new maplibregl.Popup({ offset: 34, maxWidth: "320px" });
-    popup.on("open", () => {
-      popup.setHTML(popupHTML(p));       // rebuild so Add/Remove state is current
-      loadPhotos(p);
-    });
     const m = new maplibregl.Marker({ element: el, anchor: "bottom" })
-      .setLngLat(p.coords).setPopup(popup).addTo(map);
+      .setLngLat(p.coords).addTo(map);
+    if (isMobile()) {
+      el.addEventListener("click", (e) => { e.stopPropagation(); showCard(p); });
+    } else {
+      const popup = new maplibregl.Popup({ offset: 34, maxWidth: "320px" });
+      popup.on("open", () => {
+        popup.setHTML(popupHTML(p));     // rebuild so Add/Remove state is current
+        loadPhotos(p);
+      });
+      m.setPopup(popup);
+    }
     markers[p.id] = m;
     refreshPin(p);
   }
@@ -194,7 +220,7 @@
     el.innerHTML = `<span class="pin-dot">➤</span>`;
     el.title = f.name;
     const meet = pool[TRIP.meetupId];
-    const popup = new maplibregl.Popup({ offset: 34, maxWidth: "300px" }).setHTML(`
+    const html = `
       <div class="pop"><div class="pop-body">
         <div class="pop-time">Friend start point</div>
         <h3>${f.name}</h3>
@@ -202,9 +228,14 @@
         <div class="pop-links">
           <a href="https://www.google.com/maps/dir/?api=1&origin=${f.coords[1]},${f.coords[0]}&destination=${encodeURIComponent(meet.gplace)}" target="_blank" rel="noopener">Route to meetup ↗</a>
         </div>
-      </div></div>`);
-    new maplibregl.Marker({ element: el, anchor: "bottom" })
-      .setLngLat(f.coords).setPopup(popup).addTo(map);
+      </div></div>`;
+    const m = new maplibregl.Marker({ element: el, anchor: "bottom" })
+      .setLngLat(f.coords).addTo(map);
+    if (isMobile()) {
+      el.addEventListener("click", (e) => { e.stopPropagation(); showCardHTML(html); });
+    } else {
+      m.setPopup(new maplibregl.Popup({ offset: 34, maxWidth: "300px" }).setHTML(html));
+    }
   });
 
   // --------------------------------------------------- itinerary + suggestions
@@ -309,9 +340,9 @@
       return;
     }
     const add = e.target.closest(".rec-add, .pop-add");
-    if (add) { addStop(add.dataset.id); closePopups(); return; }
+    if (add) { addStop(add.dataset.id); closePopups(); closeCard(); return; }
     const rm = e.target.closest(".pop-remove");
-    if (rm) { removeStop(rm.dataset.id); closePopups(); return; }
+    if (rm) { removeStop(rm.dataset.id); closePopups(); closeCard(); return; }
     const g = e.target.closest(".pop-gallery img");
     if (g) {
       const main = g.closest(".pop").querySelector(".pop-photo");
@@ -359,8 +390,10 @@
     document.body.classList.remove("panel-full");   // drop the sheet so the map is visible
     const inPark = p.mp !== undefined;
     map.flyTo({ center: p.coords, zoom: inPark ? 13.6 : 12.2, duration: 2200, essential: true });
+    if (isMobile()) { showCard(p); return; }
     const m = markers[p.id];
-    if (m && !m.getPopup().isOpen()) m.togglePopup();
+    const pop = m && m.getPopup();
+    if (pop && !pop.isOpen()) m.togglePopup();
   }
 
   document.getElementById("overview-btn").addEventListener("click", () => {
