@@ -356,6 +356,7 @@
     `<li>Tap the grey ➤ pins on the map for each crew's route to the meetup.</li>`;
 
   function focusStop(p) {
+    document.body.classList.remove("panel-full");   // drop the sheet so the map is visible
     const inPark = p.mp !== undefined;
     map.flyTo({ center: p.coords, zoom: inPark ? 13.6 : 12.2, duration: 2200, essential: true });
     const m = markers[p.id];
@@ -372,6 +373,10 @@
   });
   document.getElementById("panel-toggle").addEventListener("click", () => {
     document.body.classList.toggle("panel-closed");
+  });
+  // mobile bottom-sheet: tap the handle to expand/collapse
+  document.getElementById("sheet-handle").addEventListener("click", () => {
+    document.body.classList.toggle("panel-full");
   });
 
   // ------------------------------------------------------------------ photos

@@ -371,3 +371,37 @@ h1 {
   .mc { padding: 6px 8px; font-size: 11px; }
   .it-ctrl { opacity: 1; }
 }
+
+/* ---------------------------------------------------- mobile bottom sheet v3 */
+#sheet-handle { display: none; }
+@media (max-width: 720px) {
+  #sheet-handle { display: block; width: 100%; padding: 10px 0 6px; cursor: pointer; flex: none; }
+  #sheet-handle::before {
+    content: ""; display: block; width: 46px; height: 5px; border-radius: 3px;
+    background: rgba(255, 255, 255, 0.28); margin: 0 auto;
+  }
+  #panel {
+    height: 52dvh;
+    transition: height 0.3s ease, transform 0.35s ease;
+  }
+  body.panel-full #panel { height: 90dvh; }
+  .panel-head { padding: 0 16px 10px; }
+  .brand { font-size: 9.5px; margin-bottom: 4px; }
+  h1 { font-size: 20px; margin-bottom: 0; }
+  .subtitle { display: none; }
+  .gmaps-note { display: none; }
+  .stats { margin-top: 8px; gap: 6px; }
+  .stat { font-size: 11px; padding: 4px 9px; white-space: nowrap; }
+  .actions {
+    margin-top: 8px; gap: 6px;
+    flex-wrap: nowrap; overflow-x: auto;
+    scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    margin-left: -16px; margin-right: -16px; padding: 0 16px;
+  }
+  .actions::-webkit-scrollbar { display: none; }
+  .btn { flex: none; font-size: 11.5px; padding: 7px 11px; }
+  .panel-scroll { padding: 8px 12px 24px; }
+  #panel-toggle { bottom: calc(52dvh + 10px); }
+  body.panel-full #panel-toggle { display: none; }
+  body.panel-closed #panel-toggle { display: block; bottom: 12px; }
+}
